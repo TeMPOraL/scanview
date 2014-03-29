@@ -7,18 +7,19 @@
 
 (in-package :scanview)
 
+(proclaim '(optimize (speed 3) (space 0) (debug 0)))
+
 (defparameter *width* 640)
 (defparameter *height* 480)
 
-(defparameter *pixel-width* 16)
-(defparameter *pixel-height* 16)
+(defparameter *pixel-width* 10)
+(defparameter *pixel-height* 10)
 
-(defparameter *data-set-width* 10)
-(defparameter *data-set-height* 10)
+(defparameter *data-set-width* 80)
+(defparameter *data-set-height* 60)
 
 (defparameter *num-samples* (* *data-set-height* *data-set-width*))
 (defparameter *max-sample-value* 255)
-
 
 (defparameter *data* (make-array *num-samples* :initial-element *max-sample-value*))
 
@@ -27,25 +28,24 @@
     (sdl:color :r normalized :g normalized :b normalized)))
 
 (defun draw-big-pixel (x y color)
-  (sdl:draw-box (sdl:rectangle :x x :y y :w *pixel-width* :h *pixel-height*)
-                :color color                
-                :alpha 255))
+  (sdl:draw-box-* x y *pixel-width* *pixel-height*
+                :color color))
 
 (defun draw-data-point (x y)
   (draw-big-pixel (* x *pixel-width*) (* y *pixel-height*) (data-sample-to-color (elt *data* (+ (* y *data-set-height*) x)))))
 
 (defun draw-world ()
-  (loop for x from 0 to 9 do (loop
-                                for y from 0 to 9
-                                do (draw-data-point x y))))
+  (setf *data* (map 'vector (lambda (x) (random 255)) *data*))
+
+  (dotimes (x *data-set-width*)
+    (dotimes (y *data-set-height*)
+      (draw-data-point x y))))
 
 (defun main-window ()
-  (setf *data* (map 'vector (lambda (x) (random 255)) *data*))
   (sdl:WITH-INIT ()
     (sdl:WINDOW *width* *height*
                 :title-caption "Scan View" :icon-caption "ScanView")
     (setf (sdl:frame-rate) 0)
-    (sdl:initialise-default-font sdl:*font-5x7*)
 
     (sdl:WITH-EVENTS ()
       (:QUIT-EVENT () T)
@@ -59,5 +59,6 @@
   (format t "Terminating."))
 
 (defun run ()
-  (bordeaux-threads:make-thread #'main-window :name "main-window")
+;;  (bordeaux-threads:make-thread #'main-window :name "main-window") ;
+  (main-window)
   "Hello world")
